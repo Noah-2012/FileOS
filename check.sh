@@ -81,46 +81,47 @@ check_mb2()
   fi
 }
 
-check_c()
+check_header()
 {
-  FILE="$1.c"
+  FILE="$1.s"
 
   if [ ! -f "$FILE" ]; then
     echo "Fehler: Datei '$FILE' nicht gefunden."
     exit 5
   fi
 
-  # Exakte Zeile für MAGIC
-  MAGIC=$(grep '^#define MULTIBOOT2_HEADER_MAGIC' "$FILE" | cut -d ' ' -f3)
+  # Magic: dd mit Wert 0xE85250D6 suchen
+  MAGIC=$(grep -E 'dd +0xE85250D6' "$FILE" | awk '{print $2}')
 
-  # Exakte Zeile für ARCHITEKTUR
-  ARCH=$(grep '^#define MULTIBOOT_ARCHITECTURE_I386' "$FILE" | cut -d ' ' -f3)
+  # Architektur: dd mit Wert 0 (zweiter dd)
+  ARCH=$(grep -E 'dd +0x0' "$FILE" | awk 'NR==1{print $2}')
 
-  # Exakte Zeile für .checksum
-  CHECKSUM=$(grep '\.checksum[[:space:]]*=' "$FILE" | head -n1 | awk -F '=' '{gsub(/[ ,;]/, "", $2); print $2}')
+  # Checksum: dd mit negativem Wert, z.B. dd -(...)
+  CHECKSUM=$(grep -E 'dd 0x17ADAF12' "$FILE" | awk '{print $2}')
+
 
   # Ausgabe
   if [ "$MAGIC" = "0xE85250D6" ]; then
-    echo "\033[32mMULTIBOOT2_HEADER_MAGIC     = $MAGIC\033[0m"
+    echo "\033[32mMultiboot2 MAGIC     = $MAGIC\033[0m"
   else
-    echo "\033[31mMULTIBOOT2_HEADER_MAGIC     = $MAGIC\033[0m"
+    echo "\033[31mMultiboot2 MAGIC     = $MAGIC\033[0m"
   fi
-  if [ $ARCH -eq 0 ]; then
-    echo "\033[32mMULTIBOOT_ARCHITECTURE_I386 = $ARCH\033[0m"
+  if [ "$ARCH" = "0x00000000" ]; then
+    echo "\033[32mArchitecture         = $ARCH\033[0m"
   else
-    echo "\033[31mMULTIBOOT_ARCHITECTURE_I386 = $ARCH\033[0m"
+    echo "\033[31mArchitecture         = $ARCH\033[0m"
   fi
   if [ "$CHECKSUM" = "0x17ADAF12" ]; then
-    echo "\033[32mchecksum                    = $CHECKSUM\033[0m"
+    echo "\033[32mChecksum             = $CHECKSUM\033[0m"
   else
-    echo "\033[31mchecksum                    = $CHECKSUM\033[0m"
+    echo "\033[31mChecksum             = $CHECKSUM\033[0m"
     exit 6
   fi
 }
 
 if [ "$2" = "--phase-1" ]; then
   echo "\033[1mPhase 1: Checking for Values\033[0m"
-  check_c $1
+  check_header $1
   echo
   sleep 1
 elif [ "$4" = "--phase-2" ]; then
