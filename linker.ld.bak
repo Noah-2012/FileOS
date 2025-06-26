@@ -1,0 +1,63 @@
+/*
+ * linker.ld - Linker script for a 64-bit Multiboot2 kernel
+ *
+ * This script defines the memory layout of the kernel.
+ * It's crucial for correct loading and execution by GRUB.
+ */
+
+ENTRY(start) /* The first instruction executed by the kernel (from boot.s) */
+
+SECTIONS
+{
+    /* The kernel will be loaded by GRUB at 1MB (0x100000).
+     * This is the base address for all sections.
+     */
+    
+
+    /* Multiboot2 Header Section */
+    /* This section MUST be the very first section in the output file.
+     * We explicitly place it here to ensure GRUB finds it at the start of the loaded image. */
+    .multiboot_header ALIGN(8) :
+    {
+        KEEP(*(.multiboot_header))
+    }
+
+    . = 1M; /* Start of the kernel in physical memory (loaded by GRUB) */
+
+    /* Text Section (.text) */
+    /* This section follows the multiboot header directly in the output file. */
+    .text : AT(ADDR(.text))
+    {
+        *(.text)
+        *(.text.*)
+        . = ALIGN(0x1000); /* Align to 4KB page boundary */
+    }
+
+    /* Read-Only Data Section (.rodata) */
+    .rodata ALIGN(0x1000) : AT(ADDR(.rodata))
+    {
+        *(.rodata)
+        *(.rodata.*)
+        . = ALIGN(0x1000);
+    }
+
+    /* Data Section (.data) */
+    .data ALIGN(0x1000) : AT(ADDR(.data))
+    {
+        *(.data)
+        *(.data.*)
+        . = ALIGN(0x1000);
+    }
+
+    /* BSS Section (.bss) */
+    .bss ALIGN(0x1000) : AT(ADDR(.bss))
+    {
+        *(.bss)
+        *(.bss.*)
+        *(COMMON)
+        . = ALIGN(0x1000);
+    }
+
+    /* End of the kernel */
+    _end = .;
+}
