@@ -7,41 +7,39 @@
 // Place this at the beginning of your kernel.c, after includes.
 // This is crucial for GRUB to identify and load your kernel correctly.
 
-//#define MULTIBOOT2_HEADER_MAGIC 0xE85250D6
-// We use I386 even for x86_64, as GRUB loads the kernel in 32-bit compatibility mode first.
-// Your kernel then needs to switch to 64-bit long mode.
-
-//#define MULTIBOOT_ARCHITECTURE_I386 0
-//#define MULTIBOOT_ARCHITECTURE_X86_64 64
-
-//#define MULTIBOOT_HEADER_TAG_END 0
+#define MULTIBOOT2_HEADER_MAGIC 0xE85250D6
+// KORREKT laut offizieller Multiboot2 Specification:
+// '0' for i386, '0x10' for x86_64
+#define MULTIBOOT_ARCHITECTURE_X86_64 0x10 // KORREKT: 0x10 für x86_64
+#define MULTIBOOT_HEADER_TAG_END 0
 
 // Multiboot2 header structure.
-//__attribute__((section(".multiboot_header")))
-//__attribute__((aligned(8)))
-//const struct {
-//    uint32_t magic;
-//    uint32_t architecture;
-//    uint32_t header_length;
-//    uint32_t checksum;
+__attribute__((section(".multiboot_header")))
+__attribute__((aligned(8)))
+const struct {
+    uint32_t magic;
+    uint32_t architecture;
+    uint32_t header_length;
+    uint32_t checksum;
 
     // Tags follow the header. For a minimal setup, only the END tag is needed.
-//    uint16_t type;
-//    uint16_t flags;
-//    uint32_t size;
-//} multiboot2_header = {
-//    .magic = MULTIBOOT2_HEADER_MAGIC,
-//    .architecture = MULTIBOOT_ARCHITECTURE_I386,
-//    .header_length = 24,
-    // The sum of magic + arch + header_length + checksum must be 0.
-//    .checksum = 0x17ADAF12,
-    // old: .checksum = 0x17ADAF12
+    uint16_t type;
+    uint16_t flags;
+    uint32_t size;
+} multiboot2_header = {
+    .magic = MULTIBOOT2_HEADER_MAGIC,
+    .architecture = MULTIBOOT_ARCHITECTURE_X86_64, // KORREKT: Auf 0x10 setzen
+    .header_length = 24,
+    // KORREKTE Checksumme basierend auf:
+    // Magic (0xE85250D6) + Architecture (0x10) + Header Length (0x18) = 0xE85250FE
+    // Checksum = -(0xE85250FE) = 0x17ADAF02
+    .checksum = 0x17ADAF02, // KORREKT: Korrigierte Checksumme für Arch 0x10
 
     // This is the mandatory END tag for the Multiboot2 header
-//    .type = MULTIBOOT_HEADER_TAG_END,
-//    .flags = 0,
-//    .size = 8, // Size of the end tag itself (type + flags + size)
-//};
+    .type = MULTIBOOT_HEADER_TAG_END,
+    .flags = 0,
+    .size = 8, // Size of the end tag itself (type + flags + size)
+};
 
 
 // --- Multiboot Information Structure (for passing info from GRUB) ---
@@ -231,13 +229,14 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbd) {
     serial_putc('\n');
 
     // Check if GRUB passed the correct magic number
-    //if (magic != MULTIBOOT2_HEADER_MAGIC) { // Note: for Multiboot2, magic from GRUB is 0x36D76289
-    //    serial_puts("ERROR: Invalid Multiboot magic number!\n");
-    //    vga_puts("ERROR: Invalid Multiboot magic number!\n", 0x0C, 0, 1); // Red on black
-    //} else {
-    //    serial_puts("Multiboot magic OK.\n");
-    //    vga_puts("Multiboot magic OK.\n", 0x0A, 0, 1); // Green on black
-    //}
+    // For Multiboot2, the magic number passed by GRUB is 0x36D76289
+    if (magic != 0x36D76289) { // WICHTIG: Die GRUB Multiboot2 Magic Nummer ist 0x36D76289
+        serial_puts("ERROR: Invalid Multiboot magic number from GRUB!\n");
+        vga_puts("ERROR: Invalid Multiboot magic number!\n", 0x0C, 0, 1); // Red on black
+    } else {
+        serial_puts("Multiboot magic from GRUB OK.\n");
+        vga_puts("Multiboot magic OK.\n", 0x0A, 0, 1); // Green on black
+    }
 
     // You can now access information from the multiboot_info structure (mbd)
     // For example, to check memory:

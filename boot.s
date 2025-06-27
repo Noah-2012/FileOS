@@ -76,8 +76,10 @@ long_mode_entry:
     call kernel_main    # Call the C kernel entry point.
 
     # If kernel_main returns (it shouldn't in an OS), halt the system.
-    cli
-    hlt
+    .halt_loop:
+        cli
+        hlt
+        jmp .halt_loop
 
 .align 0x1000           # Align page tables to 4KB boundary.
 
@@ -141,7 +143,7 @@ gdt_data:               # 64-bit Data Segment Descriptor
 # GDTR (Global Descriptor Table Register) pointer.
 # This structure tells the CPU where the GDT is and how large it is.
 gdtr_ptr:
-    .word gdt_data - gdt_null - 1  # GDT Limit (size of GDT - 1)
+    .word gdt_end - gdt_null - 1
     .quad gdt_null                  # GDT Base Address
 
 .end

@@ -22,7 +22,6 @@ LD="$1"
 KERNEL="$2"
 BOOTLOADER="$3"
 OBJCOPY="$4"
-MULTIBOOT_HEADER="$5"
 
 # Prüfung auf fehlende Argumente
 if [ -z "$LD" ] || [ -z "$KERNEL" ] || [ -z "$BOOTLOADER" ] || [ -z "$OBJCOPY" ]; then
@@ -34,7 +33,7 @@ fi
 sleep 1
 
 if [ "$NO_ELF" = false ]; then
-  "$LD" -T linker.ld -o "$KERNEL.elf" "$MULTIBOOT_HEADER.o" "$BOOTLOADER.o" "$KERNEL.o"
+  "$LD" -T linker.ld -o "$KERNEL.elf" "$BOOTLOADER.o" "$KERNEL.o"
   echo "\033[32mINFO: Binary file build succesfully\033[0m"
   "$OBJCOPY" -O binary "$KERNEL.elf" "$KERNEL.bin"
   echo "\033[32mINFO: Created '$KERNEL.bin' succesfully\033[0m"

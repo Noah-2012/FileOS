@@ -1,45 +1,85 @@
-MEMORY
-{
-    HEADER  (rx) : ORIGIN = 0x0, LENGTH = 8K
-    KERNEL  (rx) : ORIGIN = 0x100000, LENGTH = 4M
-    DATA    (rw) : ORIGIN = 0x104000, LENGTH = 1M
-}
+ENTRY(start)
 
 SECTIONS
 {
-    .multiboot_header 0x0 : ALIGN(8)
+    /* ----------------------------- */
+    /* Virtuelle Startadresse Kernel */
+    /* ----------------------------- */
+    . = 0x100000;  /* 1 MiB, klassischer GRUB-Startpunkt */
+
+    /* -------------------------------------------- */
+    /* Multiboot2 Header muss am File Offset 0 sein */
+    /* -------------------------------------------- */
+    .multiboot_header ALIGN(8) : AT(0)
     {
         KEEP(*(.multiboot_header))
-    } > HEADER
+    }
 
-    . = 0x100000;
-
-    .text ALIGN(0x1000) :
+    /* ----------------------------- */
+    /* Code-Segment (.text)         */
+    /* ----------------------------- */
+    .text ALIGN(0x1000) : AT(ADDR(.multiboot_header) + SIZEOF(.multiboot_header))
     {
         *(.text)
         *(.text.*)
-    } > KERNEL
+    }
 
-    /* ... rest deiner Sektionen ... */
-
+    /* ----------------------------- */
+    /* Read-only Daten (.rodata)    */
+    /* ----------------------------- */
     .rodata ALIGN(0x1000) :
     {
         *(.rodata)
         *(.rodata.*)
-    } > KERNEL
+    }
 
+    /* ----------------------------- */
+    /* Initialisierte Daten (.data) */
+    /* ----------------------------- */
     .data ALIGN(0x1000) :
     {
         *(.data)
         *(.data.*)
-    } > DATA
+    }
 
+    /* ----------------------------- */
+    /* Uninitialisierte Daten (.bss)*/
+    /* ----------------------------- */
     .bss ALIGN(0x1000) :
     {
         *(.bss)
         *(.bss.*)
         *(COMMON)
-    } > DATA
+    }
 
+    /* ----------------------------- */
+    /* Page-Tables (.paging)        */
+    /* ----------------------------- */
+    .paging ALIGN(0x1000) :
+    {
+        KEEP(*(.paging))
+    }
+
+    /* ----------------------------- */
+    /* Global Descriptor Table (.gdt)*/
+    /* ----------------------------- */
+    .gdt ALIGN(8) :
+    {
+        KEEP(*(.gdt))
+    }
+
+    /* ----------------------------- */
+    /* Stack (.stack)               */
+    /* ----------------------------- */
+    .stack ALIGN(16) :
+    {
+        stack_bottom = .;
+        . = . + 0x4000;  /* 16 KiB Stack */
+        stack_top = .;
+    }
+
+    /* ----------------------------- */
+    /* Kernel-Ende-Symbol (_end)    */
+    /* ----------------------------- */
     _end = .;
 }

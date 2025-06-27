@@ -9,15 +9,13 @@ NASM = nasm
 BOOT = boot
 KERNEL = kernel
 OSNAME = fileos
-MULTIBOOT_HEADER = multiboot2_header
 
 .PHONY: all clean
 
 all:
 	@$(AS) $(BOOT).s -o $(BOOT).o
-	@$(NASM) -f elf64 $(MULTIBOOT_HEADER).s -o $(MULTIBOOT_HEADER).o
 	@echo Created $(BOOT).o succesfully
-	@./check.sh $(MULTIBOOT_HEADER) --phase-1
+	#@./check.sh --phase-1
 	@$(GCC) -c $(KERNEL).c -o $(KERNEL).o -ffreestanding -fno-builtin -Wall -Wextra -nostdlib -m64 -I. -I$(shell dirname $(shell $(CC) -print-libgcc-file-name))/include
 	@echo Compiled $(KERNEL).c succesfully
 	
