@@ -1,10 +1,16 @@
 ### FileOS Makefile ###
 
-GCC = /home/noadsch12/opt/cross/bin/x86_64-elf-gcc
-AS = /home/noadsch12/opt/cross/bin/x86_64-elf-as
-LD = /home/noadsch12/opt/cross/bin/x86_64-elf-ld
-OBJCOPY = /home/noadsch12/opt/cross/bin/x86_64-elf-objcopy
-NASM = nasm
+## Paths for Debian/Ubuntu ##
+#GCC = $(HOME)/opt/cross/bin/x86_64-elf-gcc
+#AS = $(HOME)/opt/cross/bin/x86_64-elf-as
+#LD = $(HOME)/opt/cross/bin/x86_64-elf-ld
+#OBJCOPY = $(HOME)/opt/cross/bin/x86_64-elf-objcopy
+
+## Paths for Arch Linux (brew) ##
+GCC = /home/linuxbrew/.linuxbrew/Cellar/x86_64-elf-gcc/15.1.0/bin/x86_64-elf-gcc
+AS = /home/linuxbrew/.linuxbrew/Cellar/x86_64-elf-binutils/2.44/bin/x86_64-elf-as
+LD = /home/linuxbrew/.linuxbrew/Cellar/x86_64-elf-binutils/2.44/bin/x86_64-elf-ld
+OBJCOPY = /home/linuxbrew/.linuxbrew/Cellar/x86_64-elf-binutils/2.44/bin/x86_64-elf-objcopy
 
 BOOT = boot
 KERNEL = kernel
@@ -15,7 +21,7 @@ OSNAME = fileos
 all:
 	@$(AS) $(BOOT).s -o $(BOOT).o
 	@echo Created $(BOOT).o succesfully
-	#@./check.sh --phase-1
+	@./check.sh $(KERNEL) --phase-1
 	@$(GCC) -c $(KERNEL).c -o $(KERNEL).o -ffreestanding -fno-builtin -Wall -Wextra -nostdlib -m64 -I. -I$(shell dirname $(shell $(CC) -print-libgcc-file-name))/include
 	@echo Compiled $(KERNEL).c succesfully
 	
@@ -28,8 +34,8 @@ iso:
 	@ls -R $(OSNAME) # Zeigt den Inhalt des fileos-Verzeichnisses rekursiv an
 	@echo "---------------------------------------------------------"
 	@grub-mkrescue -o $(OSNAME).iso $(OSNAME)
-	sudo dd if=$(OSNAME).iso of=/dev/sda1 bs=4M status=progress
-	sync
+	#sudo dd if=$(OSNAME).iso of=/dev/sda1 bs=4M status=progress
+	#sync
 	
 qemu: all iso
 	@echo ">>> Starting QEMU with ISO and serial output (64-bit)..."
